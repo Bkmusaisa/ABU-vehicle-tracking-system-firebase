@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <title>ABU Vehicle Tracking</title>
 
-  <!-- Your custom CSS -->
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
 
   <!-- Leaflet Map CSS -->
@@ -14,7 +14,7 @@
   <!-- Leaflet Awesome Markers CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"/>
 
-  <!-- FontAwesome (for car icon in markers) -->
+  <!-- FontAwesome (for icons in markers) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
 </head>
 
@@ -22,28 +22,35 @@
   <h2>ABU Vehicle Tracking Dashboard</h2>
   
   <!-- Map container -->
-  <div id="map" style="height:600px;"></div>
+  <div id="map" style="height:600px; margin-bottom:20px;"></div>
 
   <!-- Admin controls -->
   <h3>Admin Controls</h3>
-  <button id="overrideOn">Override ON</button>
-  <button id="overrideOff">Override OFF</button>
+  <div id="controls" style="margin-bottom:20px;">
+    <button id="overrideOn" style="background:green; color:white; padding:8px 16px; margin-right:10px; border:none; border-radius:5px; cursor:pointer;">
+      Override ON
+    </button>
+    <button id="overrideOff" style="background:red; color:white; padding:8px 16px; border:none; border-radius:5px; cursor:pointer;">
+      Override OFF
+    </button>
+  </div>
 
   <!-- Vehicle status table -->
- <table id="statusTable" border="1">
-  <thead>
-    <tr>
-      <th>Vehicle</th>
-      <th>Speed (km/h)</th>
-      <th>Latitude</th>
-      <th>Longitude</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody id="statusTableBody">
-    <!-- Rows will be auto-filled by script.js -->
-  </tbody>
-</table>
+  <h3>Vehicle Status</h3>
+  <table id="statusTable" border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; margin-top:10px;">
+    <thead style="background:#f0f0f0;">
+      <tr>
+        <th>Vehicle</th>
+        <th>Speed (km/h)</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="statusTableBody">
+      <!-- Rows will be auto-filled by script.js -->
+    </tbody>
+  </table>
 
   <!-- Firebase SDKs -->
   <script type="module">
