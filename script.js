@@ -3,7 +3,7 @@
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
 
 const db = window.db; // from index.html firebase setup
-const vehiclesRef = ref(db, "vehicles");
+const vehiclesRef = ref(db, "vehicle");
 const controlRef = ref(db, "control");
 
 // Initialize Leaflet map centered at ABU Zaria
