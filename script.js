@@ -53,7 +53,14 @@ onValue(vehiclesRef, (snapshot) => {
 
     // --- Marker logic ---
     if (!vehicleMarkers[vehicleId]) {
-      vehicleMarkers[vehicleId] = L.marker(latlng).addTo(map);
+     const markerIcon = L.AwesomeMarkers.icon({
+  icon: 'car',
+  prefix: 'fa',
+  markerColor: getColor(vehicleId) // use the same color function
+});
+
+vehicleMarkers[vehicleId] = L.marker(latlng, { icon: markerIcon }).addTo(map);
+
       vehiclePaths[vehicleId] = [latlng];
       vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], { color: getColor(vehicleId) }).addTo(map);
     } else {
