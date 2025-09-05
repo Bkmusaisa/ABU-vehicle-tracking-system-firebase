@@ -7,7 +7,7 @@ const vehiclesRef = ref(db, "vehicle");
 const controlRef = ref(db, "control");
 
 // Initialize Leaflet map centered at ABU Zaria
-const map = L.map('map').setView([11.111, 7.722], 13);
+const map = L.map('map').setView([11.1533, 7.6544], 15);
 
 // Add OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -20,7 +20,7 @@ const vehicleTrails = {};
 const vehiclePaths = {}; // store coordinates
 
 // Geofence center (ABU Zaria admin center)
-const geofenceCenter = { lat: 11.111, lng: 7.722 };
+const geofenceCenter = { lat: 11.1533, lng: 7.6544 };
 const geofenceRadius = 10; // km
 
 // Haversine formula for distance
