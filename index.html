@@ -20,21 +20,20 @@
   <button id="overrideOff">Override OFF</button>
 
   <!-- Vehicle status table -->
-  <h3>Vehicle Status</h3>
-  <table id="vehicle-table" border="1" style="width:100%; margin-top:10px; border-collapse:collapse; text-align:center;">
-    <thead>
-      <tr>
-        <th>Vehicle</th>
-        <th>Speed (km/h)</th>
-        <th>Latitude</th>
-        <th>Longitude</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Rows will be auto-filled by script.js -->
-    </tbody>
-  </table>
+ <table id="statusTable" border="1">
+  <thead>
+    <tr>
+      <th>Vehicle</th>
+      <th>Speed (km/h)</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="statusTableBody">
+    <!-- Rows will be auto-filled by script.js -->
+  </tbody>
+</table>
 
   <!-- Firebase SDKs -->
   <script type="module">

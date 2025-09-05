@@ -1,6 +1,5 @@
 // script.js (Firebase v9 compatible)
 
-// Import needed functions (when script.js is loaded after index.html, Firebase is already available)
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
 
 const db = window.db; // from index.html firebase setup
@@ -30,10 +29,10 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a =
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
 // Listen for vehicle updates
@@ -42,7 +41,8 @@ onValue(vehiclesRef, (snapshot) => {
   if (!data) return;
 
   // Update table
-  const tbody = document.querySelector("#statusTable tbody");
+  const tbody = document.getElementById("statusTableBody");
+  if (!tbody) return; // avoid null error
   tbody.innerHTML = "";
 
   Object.keys(data).forEach(vehicleId => {
@@ -53,20 +53,15 @@ onValue(vehiclesRef, (snapshot) => {
 
     // --- Marker logic ---
     if (!vehicleMarkers[vehicleId]) {
-      // First time seeing this vehicle
       vehicleMarkers[vehicleId] = L.marker(latlng).addTo(map);
-      vehiclePaths[vehicleId] = [latlng]; // start path
+      vehiclePaths[vehicleId] = [latlng];
       vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], { color: getColor(vehicleId) }).addTo(map);
     } else {
-      // Update marker position
       vehicleMarkers[vehicleId].setLatLng(latlng);
-
-      // Update path
       vehiclePaths[vehicleId].push(latlng);
       vehicleTrails[vehicleId].setLatLngs(vehiclePaths[vehicleId]);
     }
 
-    // Update popup info
     vehicleMarkers[vehicleId].bindPopup(
       `${vehicleId}<br>Speed: ${v.speed || 0} km/h`
     );
@@ -110,3 +105,4 @@ document.getElementById("overrideOff").addEventListener("click", () => {
   update(controlRef, { override: false });
   alert("Override DISABLED");
 });
+
