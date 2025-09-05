@@ -1,4 +1,11 @@
-// script.js
+// script.js (Firebase v9 compatible)
+
+// Import needed functions (when script.js is loaded after index.html, Firebase is already available)
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+
+const db = window.db; // from index.html firebase setup
+const vehiclesRef = ref(db, "vehicles");
+const controlRef = ref(db, "control");
 
 // Initialize Leaflet map centered at ABU Zaria
 const map = L.map('map').setView([11.111, 7.722], 13);
@@ -7,10 +14,6 @@ const map = L.map('map').setView([11.111, 7.722], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
 }).addTo(map);
-
-// Reference Firebase database
-const vehiclesRef = db.ref("vehicles");
-const controlRef = db.ref("control"); // for override flag
 
 // Keep markers and trails
 const vehicleMarkers = {};
@@ -33,8 +36,8 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// Listen for updates
-vehiclesRef.on("value", (snapshot) => {
+// Listen for vehicle updates
+onValue(vehiclesRef, (snapshot) => {
   const data = snapshot.val();
   if (!data) return;
 
@@ -99,11 +102,11 @@ function getColor(vehicleId) {
 
 // --- Override button logic ---
 document.getElementById("overrideOn").addEventListener("click", () => {
-  controlRef.update({ override: true });
+  update(controlRef, { override: true });
   alert("Override ENABLED");
 });
 
 document.getElementById("overrideOff").addEventListener("click", () => {
-  controlRef.update({ override: false });
+  update(controlRef, { override: false });
   alert("Override DISABLED");
 });
