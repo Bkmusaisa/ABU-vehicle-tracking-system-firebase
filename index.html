@@ -15,22 +15,26 @@
   <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js"></script>
 
-  <script>
-    // Paste your Firebase config here
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+ <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-  </script>
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDFh11x4sjPvF79GlP8ArR-X76Wk4aK6P4",
+    authDomain: "abu-vehicle-tracking.firebaseapp.com",
+    databaseURL: "https://abu-vehicle-tracking-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "abu-vehicle-tracking",
+    storageBucket: "abu-vehicle-tracking.firebasestorage.app",
+    messagingSenderId: "66698112836",
+    appId: "1:66698112836:web:3c1b919783f5313a207111"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
