@@ -1,25 +1,32 @@
 // script.js (Firebase v9 compatible)
-
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
 
 const db = window.db; // from index.html firebase setup
 const vehiclesRef = ref(db, "vehicle");
 const controlRef = ref(db, "control");
 
-// Initialize Leaflet map centered at ABU Zaria
-const map = L.map("map").setView([11.1533, 7.6544], 15);
+// Initialize Leaflet map centered at ABU Senate Building
+const map = L.map('map').setView([11.1533, 7.6544], 15);
 
 // Add OpenStreetMap tiles
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
 }).addTo(map);
+
+// Add admin location marker (black dot at Senate Building)
+L.circleMarker([11.1533, 7.6544], {
+  color: "black",
+  radius: 6,
+  fillColor: "black",
+  fillOpacity: 1
+}).addTo(map).bindPopup("Admin Location: Senate Building");
 
 // Keep markers and trails
 const vehicleMarkers = {};
 const vehicleTrails = {};
-const vehiclePaths = {};
+const vehiclePaths = {}; // store coordinates
 
-// Geofence center (ABU Zaria Senate building)
+// Geofence center (ABU Zaria admin center)
 const geofenceCenter = { lat: 11.1533, lng: 7.6544 };
 const geofenceRadius = 10; // km
 
@@ -29,20 +36,10 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-
-// Assign fixed colors to vehicles
-function getColor(vehicleId) {
-  const colorMap = {
-    vehicle1: "blue",
-    vehicle2: "green",
-  };
-  return colorMap[vehicleId] || "red"; // default red if not listed
 }
 
 // Listen for vehicle updates
@@ -50,12 +47,12 @@ onValue(vehiclesRef, (snapshot) => {
   const data = snapshot.val();
   if (!data) return;
 
-  // ✅ Fix: use the actual table <tbody> in index.html
-  const tbody = document.querySelector("#statusTable tbody");
+  // Update table
+  const tbody = document.getElementById("statusTableBody");
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  Object.keys(data).forEach((vehicleId) => {
+  Object.keys(data).forEach(vehicleId => {
     const v = data[vehicleId];
     if (!v.lat || !v.lng) return;
 
@@ -63,18 +60,9 @@ onValue(vehiclesRef, (snapshot) => {
 
     // --- Marker logic ---
     if (!vehicleMarkers[vehicleId]) {
-      const markerIcon = L.AwesomeMarkers.icon({
-        icon: "car",
-        prefix: "fa",
-        markerColor: getColor(vehicleId),
-      });
-
-      vehicleMarkers[vehicleId] = L.marker(latlng, { icon: markerIcon }).addTo(map);
-
+      vehicleMarkers[vehicleId] = L.marker(latlng).addTo(map);
       vehiclePaths[vehicleId] = [latlng];
-      vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], {
-        color: getColor(vehicleId),
-      }).addTo(map);
+      vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], { color: getColor(vehicleId) }).addTo(map);
     } else {
       vehicleMarkers[vehicleId].setLatLng(latlng);
       vehiclePaths[vehicleId].push(latlng);
@@ -86,12 +74,7 @@ onValue(vehiclesRef, (snapshot) => {
     );
 
     // --- Geofence check ---
-    const dist = haversine(
-      geofenceCenter.lat,
-      geofenceCenter.lng,
-      v.lat,
-      v.lng
-    );
+    const dist = haversine(geofenceCenter.lat, geofenceCenter.lng, v.lat, v.lng);
     let status = "Inside";
     if (dist > geofenceRadius) {
       status = "⚠ Outside";
@@ -111,6 +94,14 @@ onValue(vehiclesRef, (snapshot) => {
   });
 });
 
+// Assign colors to trails by vehicle
+function getColor(vehicleId) {
+  const colors = ["blue", "green", "red", "orange", "purple", "brown"];
+  const ids = Object.keys(vehicleMarkers);
+  const index = ids.indexOf(vehicleId) % colors.length;
+  return colors[index];
+}
+
 // --- Override button logic ---
 document.getElementById("overrideOn").addEventListener("click", () => {
   update(controlRef, { override: true });
@@ -121,3 +112,4 @@ document.getElementById("overrideOff").addEventListener("click", () => {
   update(controlRef, { override: false });
   alert("Override DISABLED");
 });
+
