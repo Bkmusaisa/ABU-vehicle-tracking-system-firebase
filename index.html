@@ -1,65 +1,40 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <title>ABU Vehicle Tracking</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
-    html, body, #map {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-  <div id="map"></div>
+  <h2>ABU Vehicle Tracking Dashboard</h2>
+  <div id="map" style="height:600px;"></div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js"></script>
 
-  <!-- Leaflet -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
   <script>
-    // 🔹 Replace with your own Firebase config from console
+    // Paste your Firebase config here
     const firebaseConfig = {
-      apiKey: "AIzaSy...",
-      authDomain: "your-project.firebaseapp.com",
-      databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-      projectId: "your-project",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:abcdef12345:web:6789ghijk"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // 🔹 Leaflet Map Setup
-    const map = L.map('map').setView([11.144, 7.717], 13); // ABU Zaria
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-
-    const markers = {}; // Store markers by vehicleId
-
-    // 🔹 Listen for vehicle updates
-    db.ref('vehicles').on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      Object.keys(data).forEach(vid => {
-        const v = data[vid];
-        if (!v || !v.lat || !v.lng) return;
-        const latlng = [v.lat, v.lng];
-        if (!markers[vid]) {
-          markers[vid] = L.marker(latlng).addTo(map).bindPopup(vid);
-        } else {
-          markers[vid].setLatLng(latlng);
-        }
-      });
-    });
   </script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Our script -->
+  <script src="script.js"></script>
 </body>
 </html>
