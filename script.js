@@ -29,6 +29,7 @@ const vehiclePaths = {}; // store coordinates
 // Geofence center (ABU Zaria admin center)
 const geofenceCenter = { lat: 11.1533, lng: 7.6544 };
 const geofenceRadius = 10; // km
+const speedLimit = 50; // km/h
 
 // Haversine formula for distance
 function haversine(lat1, lon1, lat2, lon2) {
@@ -86,6 +87,24 @@ onValue(vehiclesRef, (snapshot) => {
       alert(`${vehicleId} has left the geofence!`);
     }
 
+    // --- Speed check ---
+    let speedStatus = "";
+    if (speed > speedLimit) {
+      speedStatus = `⚠ Over Speed Limit (${speed} km/h)`;
+      alert(`${vehicleId} is exceeding speed limit! (${speed} km/h)`);
+
+      // Write warning to Firebase (ESP32 can act on it)
+      update(ref(db, `commands/${vehicleId}`), {
+        overspeed: true,
+        speed: speed
+      });
+    } else {
+      update(ref(db, `commands/${vehicleId}`), {
+        overspeed: false,
+        speed: speed
+      });
+    }
+
     // --- Update table row ---
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -93,7 +112,7 @@ onValue(vehiclesRef, (snapshot) => {
       <td>${speed}</td>
       <td>${lat.toFixed(5)}</td>
       <td>${lng.toFixed(5)}</td>
-      <td>${status}</td>
+      <td>${status} ${speedStatus}</td>
     `;
     tbody.appendChild(row);
   });
