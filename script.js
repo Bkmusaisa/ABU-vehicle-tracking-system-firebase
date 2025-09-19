@@ -1,63 +1,119 @@
-import { ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+// script.js (Firebase v9 compatible)
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
 
-// Initialize the map
-const map = L.map('map').setView([11.1533, 7.6544], 13);
+const db = window.db; // from index.html firebase setup
+const vehiclesRef = ref(db, "vehicle");
+const controlRef = ref(db, "control");
+
+// Initialize Leaflet map centered at ABU Senate Building
+const map = L.map('map').setView([11.1533, 7.6544], 15);
 
 // Add OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
+  maxZoom: 19,
 }).addTo(map);
 
-// Admin location marker
+// Add admin location marker (black dot at Senate Building)
 L.circleMarker([11.1533, 7.6544], {
-  radius: 8,
   color: "black",
+  radius: 6,
   fillColor: "black",
   fillOpacity: 1
-}).addTo(map).bindPopup("Admin Location");
+}).addTo(map).bindPopup("Admin Location: Senate Building");
 
-// Containers
-const markers = {};
-const trails = {};
-const colors = ["blue", "green", "orange", "purple", "red"];
+// Keep markers and trails
+const vehicleMarkers = {};
+const vehicleTrails = {};
+const vehiclePaths = {}; // store coordinates
 
-// Listen to Firebase vehicle data
-const dbRef = ref(window.db, "vehicle");
-onValue(dbRef, (snapshot) => {
+// Geofence center (ABU Zaria admin center)
+const geofenceCenter = { lat: 11.1533, lng: 7.6544 };
+const geofenceRadius = 10; // km
+
+// Haversine formula for distance
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+// Listen for vehicle updates
+onValue(vehiclesRef, (snapshot) => {
   const data = snapshot.val();
   if (!data) return;
 
-  Object.entries(data).forEach(([vehicleId, v], i) => {
-    const lat = Number(v.lat);   // force to number
-    const lng = Number(v.lng);   // force to number
+  // Update table
+  const tbody = document.getElementById("statusTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-    if (isNaN(lat) || isNaN(lng)) return; // skip bad values
+  Object.keys(data).forEach(vehicleId => {
+    const v = data[vehicleId];
+    if (!v.lat || !v.lng) return;
+
+    // Ensure numbers
+    const lat = parseFloat(v.lat);
+    const lng = parseFloat(v.lng);
+    const speed = parseFloat(v.speed) || 0;
+
     const latlng = [lat, lng];
 
-    // If first time → create marker + trail
-    if (!markers[vehicleId]) {
-      markers[vehicleId] = L.marker(latlng).addTo(map);
-      trails[vehicleId] = L.polyline([latlng], { color: colors[i % colors.length] }).addTo(map);
+    // --- Marker logic ---
+    if (!vehicleMarkers[vehicleId]) {
+      vehicleMarkers[vehicleId] = L.marker(latlng).addTo(map);
+      vehiclePaths[vehicleId] = [latlng];
+      vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], { color: getColor(vehicleId) }).addTo(map);
     } else {
-      // Update position & trail
-      markers[vehicleId].setLatLng(latlng);
-      trails[vehicleId].addLatLng(latlng);
+      vehicleMarkers[vehicleId].setLatLng(latlng);
+      vehiclePaths[vehicleId].push(latlng);
+      vehicleTrails[vehicleId].setLatLngs(vehiclePaths[vehicleId]);
     }
 
-    // Popup with speed
-    markers[vehicleId].bindPopup(
-      `${vehicleId}<br>Speed: ${v.speed || 0} km/h`
+    vehicleMarkers[vehicleId].bindPopup(
+      `${vehicleId}<br>Speed: ${speed} km/h`
     );
+
+    // --- Geofence check ---
+    const dist = haversine(geofenceCenter.lat, geofenceCenter.lng, lat, lng);
+    let status = "Inside";
+    if (dist > geofenceRadius) {
+      status = "⚠ Outside";
+      alert(`${vehicleId} has left the geofence!`);
+    }
+
+    // --- Update table row ---
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${vehicleId}</td>
+      <td>${speed}</td>
+      <td>${lat.toFixed(5)}</td>
+      <td>${lng.toFixed(5)}</td>
+      <td>${status}</td>
+    `;
+    tbody.appendChild(row);
   });
 });
 
-// Override buttons
+// Assign colors to trails by vehicle
+function getColor(vehicleId) {
+  const colors = ["blue", "green", "red", "orange", "purple", "brown"];
+  const ids = Object.keys(vehicleMarkers);
+  const index = ids.indexOf(vehicleId) % colors.length;
+  return colors[index];
+}
+
+// --- Override button logic ---
 document.getElementById("overrideOn").addEventListener("click", () => {
-  set(ref(window.db, "admin/override"), "ON");
+  update(controlRef, { override: true });
   alert("Override ENABLED");
 });
 
 document.getElementById("overrideOff").addEventListener("click", () => {
-  set(ref(window.db, "admin/override"), "OFF");
+  update(controlRef, { override: false });
   alert("Override DISABLED");
 });
