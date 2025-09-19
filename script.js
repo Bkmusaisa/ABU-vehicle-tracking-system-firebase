@@ -1,138 +1,137 @@
-// script.js (Firebase v9 compatible)
-import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+// Firebase SDK imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-const db = window.db; // from index.html firebase setup
-const vehiclesRef = ref(db, "vehicle");
-const controlRef = ref(db, "control");
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDFh11x4sjPvF79GlP8ArR-X76Wk4aK6P4",
+  authDomain: "abu-vehicle-tracking.firebaseapp.com",
+  databaseURL: "https://abu-vehicle-tracking-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "abu-vehicle-tracking",
+  storageBucket: "abu-vehicle-tracking.firebasestorage.app",
+  messagingSenderId: "66698112836",
+  appId: "1:66698112836:web:3c1b919783f5313a207111"
+};
 
-// Initialize Leaflet map centered at ABU Senate Building
-const map = L.map('map').setView([11.1533, 7.6544], 15);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-// Add OpenStreetMap tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
+// Admin (geofence center)
+const adminLocation = { lat: 11.1556, lng: 7.6625 }; // ABU Zaria coords
+const geofenceRadius = 10000; // 10 km
+
+// Leaflet map setup
+const map = L.map("map").setView([adminLocation.lat, adminLocation.lng], 13);
+
+// Tile layer
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap contributors"
 }).addTo(map);
 
-// Add admin location marker (black dot at Senate Building)
-L.circleMarker([11.1533, 7.6544], {
-  color: "black",
+// Admin marker
+L.circleMarker([adminLocation.lat, adminLocation.lng], {
   radius: 6,
+  color: "black",
   fillColor: "black",
   fillOpacity: 1
-}).addTo(map).bindPopup("Admin Location: Senate Building");
+}).addTo(map).bindPopup("Admin Location");
 
-// Keep markers and trails
+// Geofence circle
+L.circle([adminLocation.lat, adminLocation.lng], {
+  radius: geofenceRadius,
+  color: "red",
+  fill: false
+}).addTo(map);
+
+// Markers storage
 const vehicleMarkers = {};
-const vehicleTrails = {};
-const vehiclePaths = {}; // store coordinates
+const vehiclePaths = {};
 
-// Geofence center (ABU Zaria admin center)
-const geofenceCenter = { lat: 11.1533, lng: 7.6544 };
-const geofenceRadius = 10; // km
-const speedLimit = 50; // km/h
+// Table reference
+const tableBody = document.querySelector("#vehicleTable tbody");
 
-// Haversine formula for distance
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+// Distance helper
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c;
 }
 
-// Listen for vehicle updates
+// Listen for vehicle data
+const vehiclesRef = ref(db, "vehicle");
 onValue(vehiclesRef, (snapshot) => {
   const data = snapshot.val();
-  if (!data) return;
+  tableBody.innerHTML = ""; // clear table
 
-  // Update table
-  const tbody = document.getElementById("statusTableBody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-
-  Object.keys(data).forEach(vehicleId => {
-    const v = data[vehicleId];
+  Object.keys(data).forEach((id) => {
+    const v = data[id];
     if (!v.lat || !v.lng) return;
 
-    // Ensure numbers
-    const lat = parseFloat(v.lat);
-    const lng = parseFloat(v.lng);
-    const speed = parseFloat(v.speed) || 0;
-
-    const latlng = [lat, lng];
-
-    // --- Marker logic ---
-    if (!vehicleMarkers[vehicleId]) {
-      vehicleMarkers[vehicleId] = L.marker(latlng).addTo(map);
-      vehiclePaths[vehicleId] = [latlng];
-      vehicleTrails[vehicleId] = L.polyline(vehiclePaths[vehicleId], { color: getColor(vehicleId) }).addTo(map);
+    // Update or create marker
+    if (!vehicleMarkers[id]) {
+      vehicleMarkers[id] = L.marker([v.lat, v.lng]).addTo(map).bindPopup(`Vehicle ${id}`);
+      vehiclePaths[id] = L.polyline([[v.lat, v.lng]], { color: getColor(id) }).addTo(map);
     } else {
-      vehicleMarkers[vehicleId].setLatLng(latlng);
-      vehiclePaths[vehicleId].push(latlng);
-      vehicleTrails[vehicleId].setLatLngs(vehiclePaths[vehicleId]);
+      vehicleMarkers[id].setLatLng([v.lat, v.lng]);
+      vehiclePaths[id].addLatLng([v.lat, v.lng]);
     }
 
-    vehicleMarkers[vehicleId].bindPopup(
-      `${vehicleId}<br>Speed: ${speed} km/h`
-    );
-
-    // --- Geofence check ---
-    const dist = haversine(geofenceCenter.lat, geofenceCenter.lng, lat, lng);
-    let status = "Inside";
-    if (dist > geofenceRadius) {
-      status = "⚠ Outside";
-      alert(`${vehicleId} has left the geofence!`);
+    // Geofencing
+    const distance = getDistance(v.lat, v.lng, adminLocation.lat, adminLocation.lng);
+    if (distance > geofenceRadius) {
+      alert(`⚠ Vehicle ${id} has exited the geofence!`);
     }
 
-    // --- Speed check ---
-    let speedStatus = "";
-    if (speed > speedLimit) {
-      speedStatus = `⚠ Over Speed Limit (${speed} km/h)`;
-      alert(`${vehicleId} is exceeding speed limit! (${speed} km/h)`);
-
-      // Write warning to Firebase (ESP32 can act on it)
-      update(ref(db, `commands/${vehicleId}`), {
-        overspeed: true,
-        speed: speed
-      });
-    } else {
-      update(ref(db, `commands/${vehicleId}`), {
-        overspeed: false,
-        speed: speed
-      });
+    // Speed limit alert
+    if (v.speed && v.speed > 50) {
+      alert(`⚠ Vehicle ${id} is overspeeding! (${v.speed} km/h)`);
     }
 
-    // --- Update table row ---
+    // Update table row
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${vehicleId}</td>
-      <td>${speed}</td>
-      <td>${lat.toFixed(5)}</td>
-      <td>${lng.toFixed(5)}</td>
-      <td>${status} ${speedStatus}</td>
+      <td>${id}</td>
+      <td>${v.lat.toFixed(5)}</td>
+      <td>${v.lng.toFixed(5)}</td>
+      <td>${v.speed || 0}</td>
+      <td>
+        <button onclick="shutOffVehicle('${id}')">Shut Off</button>
+        <button onclick="restoreVehicle('${id}')">Restore</button>
+      </td>
     `;
-    tbody.appendChild(row);
+    tableBody.appendChild(row);
   });
 });
 
-// Assign colors to trails by vehicle
-function getColor(vehicleId) {
-  const colors = ["blue", "green", "red", "orange", "purple", "brown"];
-  const ids = Object.keys(vehicleMarkers);
-  const index = ids.indexOf(vehicleId) % colors.length;
-  return colors[index];
+// Color helper
+function getColor(id) {
+  const colors = ["blue", "green", "orange", "purple", "brown"];
+  return colors[(parseInt(id) - 1) % colors.length];
 }
 
-// --- Override button logic ---
-document.getElementById("overrideOn").addEventListener("click", () => {
-  update(controlRef, { override: true });
-  alert("Override ENABLED");
-});
+// Vehicle control functions
+window.shutOffVehicle = function (id) {
+  const controlRef = ref(db, `vehicle/${id}/control`);
+  set(controlRef, {
+    command: "SHUT_OFF",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Shutdown sent to Vehicle ${id}`));
+};
 
-document.getElementById("overrideOff").addEventListener("click", () => {
-  update(controlRef, { override: false });
-  alert("Override DISABLED");
-});
+window.restoreVehicle = function (id) {
+  const controlRef = ref(db, `vehicle/${id}/control`);
+  set(controlRef, {
+    command: "RESTORE",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Restore sent to Vehicle ${id}`));
+};
