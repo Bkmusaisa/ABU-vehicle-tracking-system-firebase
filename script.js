@@ -48,8 +48,8 @@ L.circle([adminLocation.lat, adminLocation.lng], {
 const vehicleMarkers = {};
 const vehiclePaths = {};
 
-// Table reference
-const tableBody = document.querySelector("#vehicleTable tbody");
+// Table reference (fixed ID)
+const tableBody = document.querySelector("#statusTableBody");
 
 // Distance helper
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -59,10 +59,10 @@ function getDistance(lat1, lon1, lat2, lon2) {
   const Δφ = (lat2 - lat1) * Math.PI / 180;
   const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
             Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
 }
@@ -71,6 +71,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 const vehiclesRef = ref(db, "vehicle");
 onValue(vehiclesRef, (snapshot) => {
   const data = snapshot.val();
+  if (!data || !tableBody) return;
+
   tableBody.innerHTML = ""; // clear table
 
   Object.keys(data).forEach((id) => {
@@ -88,7 +90,9 @@ onValue(vehiclesRef, (snapshot) => {
 
     // Geofencing
     const distance = getDistance(v.lat, v.lng, adminLocation.lat, adminLocation.lng);
+    let status = "Inside";
     if (distance > geofenceRadius) {
+      status = "⚠ Outside";
       alert(`⚠ Vehicle ${id} has exited the geofence!`);
     }
 
@@ -101,9 +105,10 @@ onValue(vehiclesRef, (snapshot) => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${id}</td>
+      <td>${v.speed || 0}</td>
       <td>${v.lat.toFixed(5)}</td>
       <td>${v.lng.toFixed(5)}</td>
-      <td>${v.speed || 0}</td>
+      <td>${status}</td>
       <td>
         <button onclick="shutOffVehicle('${id}')">Shut Off</button>
         <button onclick="restoreVehicle('${id}')">Restore</button>
