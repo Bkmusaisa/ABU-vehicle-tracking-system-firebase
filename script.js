@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDFh11x4sjPvF79GlP8ArR-X76Wk4aK6P4",
   authDomain: "abu-vehicle-tracking.firebaseapp.com",
@@ -23,8 +23,6 @@ const geofenceRadius = 10000; // 10 km
 
 // Leaflet map setup
 const map = L.map("map").setView([adminLocation.lat, adminLocation.lng], 13);
-
-// Tile layer
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors"
 }).addTo(map);
@@ -47,8 +45,6 @@ L.circle([adminLocation.lat, adminLocation.lng], {
 // Markers storage
 const vehicleMarkers = {};
 const vehiclePaths = {};
-
-// Table reference (fixed ID)
 const tableBody = document.querySelector("#statusTableBody");
 
 // Distance helper
@@ -58,12 +54,10 @@ function getDistance(lat1, lon1, lat2, lon2) {
   const φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
   const Δλ = (lon2 - lon1) * Math.PI / 180;
-
   const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
             Math.cos(φ1) * Math.cos(φ2) *
             Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
   return R * c;
 }
 
@@ -101,7 +95,7 @@ onValue(vehiclesRef, (snapshot) => {
       alert(`⚠ Vehicle ${id} is overspeeding! (${v.speed} km/h)`);
     }
 
-    // Update table row
+    // Update table row (with per-vehicle control buttons)
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${id}</td>
@@ -112,6 +106,8 @@ onValue(vehiclesRef, (snapshot) => {
       <td>
         <button onclick="shutOffVehicle('${id}')">Shut Off</button>
         <button onclick="restoreVehicle('${id}')">Restore</button>
+        <button onclick="overrideOn('${id}')">Override ON</button>
+        <button onclick="overrideOff('${id}')">Override OFF</button>
       </td>
     `;
     tableBody.appendChild(row);
@@ -139,4 +135,21 @@ window.restoreVehicle = function (id) {
     command: "RESTORE",
     timestamp: new Date().toISOString()
   }).then(() => alert(`Restore sent to Vehicle ${id}`));
+};
+
+// Per-vehicle override functions
+window.overrideOn = function (id) {
+  const controlRef = ref(db, `vehicle/${id}/override`);
+  set(controlRef, {
+    command: "OVERRIDE_ON",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Override ON sent to Vehicle ${id}`));
+};
+
+window.overrideOff = function (id) {
+  const controlRef = ref(db, `vehicle/${id}/override`);
+  set(controlRef, {
+    command: "OVERRIDE_OFF",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Override OFF sent to Vehicle ${id}`));
 };
