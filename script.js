@@ -95,7 +95,10 @@ onValue(vehiclesRef, (snapshot) => {
       alert(`⚠ Vehicle ${id} is overspeeding! (${v.speed} km/h)`);
     }
 
-    // Update table row (with per-vehicle control buttons)
+    // Check override
+    const overrideStatus = v.override === true ? "ON" : "OFF";
+
+    // Update table row
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${id}</td>
@@ -103,6 +106,7 @@ onValue(vehiclesRef, (snapshot) => {
       <td>${v.lat.toFixed(5)}</td>
       <td>${v.lng.toFixed(5)}</td>
       <td>${status}</td>
+      <td>Override: ${overrideStatus}</td>
       <td>
         <button onclick="shutOffVehicle('${id}')">Shut Off</button>
         <button onclick="restoreVehicle('${id}')">Restore</button>
@@ -137,19 +141,13 @@ window.restoreVehicle = function (id) {
   }).then(() => alert(`Restore sent to Vehicle ${id}`));
 };
 
-// Per-vehicle override functions
+// Override functions (boolean flags)
 window.overrideOn = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/override`);
-  set(controlRef, {
-    command: "OVERRIDE_ON",
-    timestamp: new Date().toISOString()
-  }).then(() => alert(`Override ON sent to Vehicle ${id}`));
+  const overrideRef = ref(db, `vehicle/${id}/override`);
+  set(overrideRef, true).then(() => alert(`Override ENABLED for Vehicle ${id}`));
 };
 
 window.overrideOff = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/override`);
-  set(controlRef, {
-    command: "OVERRIDE_OFF",
-    timestamp: new Date().toISOString()
-  }).then(() => alert(`Override OFF sent to Vehicle ${id}`));
+  const overrideRef = ref(db, `vehicle/${id}/override`);
+  set(overrideRef, false).then(() => alert(`Override DISABLED for Vehicle ${id}`));
 };
