@@ -95,8 +95,16 @@ onValue(vehiclesRef, (snapshot) => {
       alert(`⚠ Vehicle ${id} is overspeeding! (${v.speed} km/h)`);
     }
 
-    // Check override
+    // Override status
     const overrideStatus = v.override === true ? "ON" : "OFF";
+
+    // Shutoff/Restore status
+    let engineStatus = "Running";
+    if (v.control && v.control.command === "SHUT_OFF") {
+      engineStatus = "Shut Off";
+    } else if (v.control && v.control.command === "RESTORE") {
+      engineStatus = "Running";
+    }
 
     // Update table row
     const row = document.createElement("tr");
@@ -107,6 +115,7 @@ onValue(vehiclesRef, (snapshot) => {
       <td>${v.lng.toFixed(5)}</td>
       <td>${status}</td>
       <td>Override: ${overrideStatus}</td>
+      <td>Engine: ${engineStatus}</td>
       <td>
         <button onclick="shutOffVehicle('${id}')">Shut Off</button>
         <button onclick="restoreVehicle('${id}')">Restore</button>
@@ -126,13 +135,19 @@ function getColor(id) {
 
 // Vehicle control functions
 window.shutOffVehicle = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/control/command`);
-  set(controlRef, "SHUT_OFF").then(() => alert(`Shutdown sent to Vehicle ${id}`));
+  const controlRef = ref(db, `vehicle/${id}/control`);
+  set(controlRef, {
+    command: "SHUT_OFF",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Shutdown sent to Vehicle ${id}`));
 };
 
 window.restoreVehicle = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/control/command`);
-  set(controlRef, "RESTORE").then(() => alert(`Restore sent to Vehicle ${id}`));
+  const controlRef = ref(db, `vehicle/${id}/control`);
+  set(controlRef, {
+    command: "RESTORE",
+    timestamp: new Date().toISOString()
+  }).then(() => alert(`Restore sent to Vehicle ${id}`));
 };
 
 // Override functions (boolean flags)
