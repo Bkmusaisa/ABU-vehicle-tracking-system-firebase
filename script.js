@@ -126,19 +126,13 @@ function getColor(id) {
 
 // Vehicle control functions
 window.shutOffVehicle = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/control`);
-  set(controlRef, {
-    command: "SHUT_OFF",
-    timestamp: new Date().toISOString()
-  }).then(() => alert(`Shutdown sent to Vehicle ${id}`));
+  const controlRef = ref(db, `vehicle/${id}/control/command`);
+  set(controlRef, "SHUT_OFF").then(() => alert(`Shutdown sent to Vehicle ${id}`));
 };
 
 window.restoreVehicle = function (id) {
-  const controlRef = ref(db, `vehicle/${id}/control`);
-  set(controlRef, {
-    command: "RESTORE",
-    timestamp: new Date().toISOString()
-  }).then(() => alert(`Restore sent to Vehicle ${id}`));
+  const controlRef = ref(db, `vehicle/${id}/control/command`);
+  set(controlRef, "RESTORE").then(() => alert(`Restore sent to Vehicle ${id}`));
 };
 
 // Override functions (boolean flags)
