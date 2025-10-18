@@ -18,7 +18,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Admin (geofence center)
-const adminLocation = { lat: 11.15192, lng: 7.65604 }; // ABU Zaria coords
+const adminLocation = { lat: 11.152155, lng: 7.6509367 }; // ABU Zaria coords
 const geofenceRadius = 10000; // 10 km
 
 // Leaflet map setup
